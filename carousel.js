@@ -1,9 +1,9 @@
 $.Carousel = function(el){
   this.$el = $(el);
-  this.$items = $(this.$el.data("items"));
+  this.$items = this.$el.find(".items").children();
   this.activeIdx = 0;
-  this.$activeItem = this.$items.children().eq(this.activeIdx);
-  this.$activeItem.addClass('active');
+  this.transitioning = false;
+  this.$items.eq(0).addClass("active");
   this.setSliders();
 };
 
@@ -25,30 +25,33 @@ $.Carousel.prototype.slideRight = function(){
 };
 
 $.Carousel.prototype.slide = function(dir){
-  var that = this;
-  this.activeIdx = (dir + this.activeIdx) % this.$items.children().length;
-  var $newActiveItem = this.$items.children().eq(this.activeIdx);
+  if (this.transitioning){
+    return;
+  }
+  this.transitioning = true;
+  var $oldItem = this.$items.eq(this.activeIdx);
+  this.activeIdx = (dir + this.activeIdx) % this.$items.length;
+  var $newItem = this.$items.eq(this.activeIdx);
 
-  if( dir === 1) {
-    $(".left").removeClass('active').removeClass('left').removeClass('right');
-    $newActiveItem.addClass('active').addClass('right');
-
-    that.$activeItem.addClass('left');
-    setTimeout(function(){
-      $newActiveItem.removeClass('right');
-    },0);
-  } else if (dir === -1) {
-    $(".right").removeClass('active').removeClass('right').removeClass('left');
-    $newActiveItem.addClass('active').addClass('left');
-
-    that.$activeItem.addClass('right');
-    setTimeout(function(){
-      $newActiveItem.removeClass('left');
-    },0);
+  var newSide, oldSide;
+  if (dir == 1) {
+    newSide = "right";
+    oldSide = "left";
+  } else {
+    newSide = "left";
+    oldSide = "right";
   }
 
-  this.$activeItem = $newActiveItem;
+  $newItem.addClass("active " + newSide);
+  $oldItem.one("transitionend", (function () {
+    $oldItem.removeClass("active " + oldSide);
+    this.transitioning = false;
+  }).bind(this));
 
+  setTimeout((function () {
+    $oldItem.addClass(oldSide);
+    $newItem.removeClass(newSide);
+  }).bind(this), 0);
 };
 
 
